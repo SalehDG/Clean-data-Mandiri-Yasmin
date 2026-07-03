@@ -4,8 +4,8 @@ import re
 from io import BytesIO
 
 # Mengatur tampilan halaman web
-st.set_page_config(page_title="Perapih Data CSV to Excel", layout="wide")
-st.title("✨ Aplikasi Perapih Data (CSV ➡️ XLSX)")
+st.set_page_config(page_title="Perapih Data CSV Mandiri Yasmin", layout="wide")
+st.title("✨ Perapih Data CSV Mandiri Yasmin")
 st.write("Silakan upload file CSV mentah.")
 
 # Fungsi untuk membersihkan teks Uraian
