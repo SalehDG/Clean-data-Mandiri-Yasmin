@@ -4,9 +4,9 @@ import re
 from io import BytesIO
 
 # Mengatur tampilan halaman web
-st.set_page_config(page_title="Perapih Data Excel", layout="wide")
-st.title("✨ Aplikasi Perapih Data")
-st.write("Silakan upload file Excel mentah (.xlsx).")
+st.set_page_config(page_title="Perapih Data CSV to Excel", layout="wide")
+st.title("✨ Aplikasi Perapih Data (CSV ➡️ XLSX)")
+st.write("Silakan upload file CSV mentah.")
 
 # Fungsi untuk membersihkan teks Uraian
 def bersihkan_uraian(teks):
@@ -51,18 +51,18 @@ def bersihkan_tanggal(tgl):
     
     tgl_str = str(tgl).strip()
     
-    # Cari angka 26 yang didahului oleh '/' atau '-' di ujung kata/kalimat, 
-    # dan ubah jadi 2026. Jika sudah 2026 tidak akan tersentuh.
+    # Mengubah angka 26 setelah '/' atau '-' menjadi 2026. 
+    # Jika sudah berbentuk 2026, tidak akan diubah.
     tgl_str = re.sub(r'([/-])26\b', r'\g<1>2026', tgl_str)
     
     return tgl_str
 
-# Area Upload File
-file_unggahan = st.file_uploader("Upload File Excel Mentah (.xlsx)", type=["xlsx"])
+# Area Upload File (Menerima file .csv)
+file_unggahan = st.file_uploader("Upload File CSV Mentah (.csv)", type=["csv"])
 
 if file_unggahan is not None:
-    # Membaca file Excel mentah
-    df = pd.read_excel(file_unggahan)
+    # Membaca file CSV mentah yang diunggah
+    df = pd.read_csv(file_unggahan)
     
     st.write("### Data Mentah (Sebelum Diproses):")
     st.dataframe(df.head())
@@ -89,18 +89,18 @@ if file_unggahan is not None:
             st.write("### Data Hasil (Setelah Diproses):")
             st.dataframe(df_rapih.head())
             
-            # Menyiapkan file Excel untuk didownload
+            # Menyiapkan file Excel (.xlsx) di dalam memori untuk didownload
             output = BytesIO()
             df_rapih.to_excel(output, index=False, engine='openpyxl')
             excel_data = output.getvalue()
             
-            # Tombol Download Excel Bersih
+            # Tombol Download hasil berupa file Excel (.xlsx)
             st.download_button(
-                label="⬇️ Download Excel Rapih",
+                label="⬇️ Download Excel Rapih (.xlsx)",
                 data=excel_data,
                 file_name='data_sudah_rapih.xlsx',
                 mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             )
             
         except KeyError as error_kolom:
-            st.error(f"⚠️ Terjadi kesalahan: Kolom {error_kolom} tidak ditemukan di Excel mentahmu. Pastikan nama kolom pada aslinya sama persis.")
+            st.error(f"⚠️ Terjadi kesalahan: Kolom {error_kolom} tidak ditemukan di CSV mentahmu. Pastikan nama kolom pada aslinya sama persis.")
