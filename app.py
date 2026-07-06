@@ -37,6 +37,7 @@ def bersihkan_nominal(angka):
         
     # Hapus ".00" jika ada di ujung belakang
     if angka_str.endswith(".00"):
+        # Menggunakan format pemotongan string string[:-3]
         angka_str = angka_str[:-3]
         
     # Ganti sisa koma menjadi titik
@@ -80,6 +81,9 @@ if file_unggahan is not None:
             
             # 2. Membersihkan kolom 'desc' dan memasukkannya ke 'Uraian'
             df_rapih['Uraian'] = df['Description.1'].apply(bersihkan_uraian)
+            
+            # Baru: Menambahkan kolom 'Nama' kosong di antara Uraian dan Debit
+            df_rapih['Nama'] = ""
             
             # 3. Menukar posisi Credit dan Debet beserta pembersihan nominal
             df_rapih['Debit'] = df['Credit'].apply(bersihkan_nominal)
