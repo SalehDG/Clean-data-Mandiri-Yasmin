@@ -12,19 +12,19 @@ st.write("Silakan upload file CSV mentah.")
 def bersihkan_uraian(teks):
     if pd.isna(teks):
         return teks
-    teks_bersih = str(teks)
+    teks_clean = str(teks)
     
     # 1. Hapus pola nomor surat/invoice (contoh: 13/SPM/DRN5/VI/2026)
-    teks_bersih = re.sub(r'\d+/[A-Za-z0-9/-]+', '', teks_bersih)
+    teks_clean = re.sub(r'\d+/[A-Za-z0-9/-]+', '', teks_clean)
     
     # 2. Hapus pola tanggal (contoh: "2 juni 26")
     bulan = r'(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|jan|feb|mar|apr|jun|jul|agu|sep|okt|nov|des)'
     pola_tanggal = r'\d*\s*' + bulan + r'\s*\d{2,4}$'
-    teks_bersih = re.sub(pola_tanggal, '', teks_bersih, flags=re.IGNORECASE)
+    teks_clean = re.sub(pola_tanggal, '', teks_clean, flags=re.IGNORECASE)
     
-    return teks_bersih.strip()
+    return teks_clean.strip()
 
-# Fungsi untuk membersihkan nominal
+# Fungsi untuk membersihkan nominal (Ribuan diubah, Desimal tetap)
 def bersihkan_nominal(angka):
     if pd.isna(angka):
         return angka
@@ -37,24 +37,35 @@ def bersihkan_nominal(angka):
         
     # Hapus ".00" jika ada di ujung belakang
     if angka_str.endswith(".00"):
-        # Menggunakan format pemotongan string string[:-3]
         angka_str = angka_str[:-3]
         
-    # Ganti sisa koma menjadi titik
-    angka_str = angka_str.replace(",", ".")
+    # BARU: Hanya mengubah koma yang merupakan pemisah ribuan (diikuti oleh 3 digit angka)
+    # Koma desimal (misal diakhiri 2 digit angka seperti ,61) tidak akan diubah
+    angka_str = re.sub(r',(\d{3})(?=\D|$)', r'.\1', angka_str)
     
     return angka_str
 
-# Fungsi untuk mengubah tahun 26 menjadi mutlak 2026
+# Fungsi untuk memastikan tanggal selalu berformat mutlak DD/MM/YYYY
 def bersihkan_tanggal(tgl):
     if pd.isna(tgl):
         return tgl
     
     tgl_str = str(tgl).strip()
     
-    # Mengubah angka 26 setelah '/' atau '-' menjadi 2026. 
-    # Jika sudah berbentuk 2026, tidak akan diubah.
-    tgl_str = re.sub(r'([/-])26\b', r'\g<1>2026', tgl_str)
+    # Memisahkan string tanggal berdasarkan karakter '/' atau '-'
+    parts = re.split(r'[/-]', tgl_str)
+    if len(parts) == 3:
+        day, month, year = parts[0].strip(), parts[1].strip(), parts[2].strip()
+        
+        # Memastikan hari dan bulan selalu 2 digit (menambahkan 0 di depan jika 1 digit)
+        day = day.zfill(2)
+        month = month.zfill(2)
+        
+        # Memastikan tahun selalu 4 digit (misal: 26 -> 2026)
+        if len(year) == 2:
+            year = "20" + year
+            
+        return f"{day}/{month}/{year}"
     
     return tgl_str
 
@@ -66,7 +77,6 @@ if file_unggahan is not None:
     df = pd.read_csv(file_unggahan)
     
     st.write("### Data Mentah (Sebelum Diproses):")
-    # hide_index=True menyembunyikan nomor urut, .head() tetap untuk membatasi preview mentah
     st.dataframe(df.head(), hide_index=True)
 
     st.divider()
@@ -76,23 +86,22 @@ if file_unggahan is not None:
         df_rapih = pd.DataFrame()
         
         try:
-            # 1. Memindahkan kolom 'date' & merapihkan tahunnya jadi 2026
+            # 1. Memindahkan kolom 'date' & merapihkan format tanggalnya jadi DD/MM/YYYY
             df_rapih['TGL/ BLN/THN'] = df['Date'].apply(bersihkan_tanggal)
             
             # 2. Membersihkan kolom 'desc' dan memasukkannya ke 'Uraian'
             df_rapih['Uraian'] = df['Description.1'].apply(bersihkan_uraian)
             
-            # Baru: Menambahkan kolom 'Nama' kosong di antara Uraian dan Debit
+            # Menambahkan kolom 'Nama' kosong di antara Uraian dan Debit
             df_rapih['Nama'] = ""
             
             # 3. Menukar posisi Credit dan Debet beserta pembersihan nominal
             df_rapih['Debit'] = df['Credit'].apply(bersihkan_nominal)
             df_rapih['Credit'] = df['Debit'].apply(bersihkan_nominal)
             
-            st.success("✅ Data berhasil dirapihkan!")
+            st.success("✅ Data berhasil dirapihkan dengan aturan baru!")
             
             st.write("### Data Hasil (Setelah Diproses):")
-            # Menghapus .head() agar tampil semua dan hide_index=True untuk hapus nomor urut
             st.dataframe(df_rapih, hide_index=True)
             
             # Menyiapkan file Excel (.xlsx) di dalam memori untuk didownload
