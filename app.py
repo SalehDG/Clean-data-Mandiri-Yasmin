@@ -65,7 +65,8 @@ if file_unggahan is not None:
     df = pd.read_csv(file_unggahan)
     
     st.write("### Data Mentah (Sebelum Diproses):")
-    st.dataframe(df.head())
+    # hide_index=True menyembunyikan nomor urut, .head() tetap untuk membatasi preview mentah
+    st.dataframe(df.head(), hide_index=True)
 
     st.divider()
     
@@ -87,7 +88,8 @@ if file_unggahan is not None:
             st.success("✅ Data berhasil dirapihkan!")
             
             st.write("### Data Hasil (Setelah Diproses):")
-            st.dataframe(df_rapih.head())
+            # Menghapus .head() agar tampil semua dan hide_index=True untuk hapus nomor urut
+            st.dataframe(df_rapih, hide_index=True)
             
             # Menyiapkan file Excel (.xlsx) di dalam memori untuk didownload
             output = BytesIO()
